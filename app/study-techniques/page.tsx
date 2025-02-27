@@ -6,6 +6,7 @@ export default function StudyTechniques() {
         <h1 className="text-2xl font-bold mb-4">Study Techniques</h1>
         <p>Explore various study techniques to boost your productivity.</p>
         <h2><Link href="/flashcard">FlashCard Stuff</Link></h2>
+        <h2><Link href="/active_recall">Active Recall</Link></h2>
       </div>
       
     )
