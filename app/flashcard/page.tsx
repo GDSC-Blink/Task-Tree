@@ -22,11 +22,19 @@ export default function Home() {
     localStorage.setItem("decks", JSON.stringify(decks));
   }, [decks]);
 
+ 
+
   const createDeck = () => {
     if (!deckName.trim()) return;
     const newDeck: Deck = { id: Date.now(), name: deckName, cards: [] };
     setDecks([...decks, newDeck]);
     setDeckName("");
+  };
+  const handleKeyPress = (event:any) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      createDeck(); // Trigger createDeck on Enter key press
+    }
   };
 
   return (
@@ -39,6 +47,7 @@ export default function Home() {
           placeholder="Deck Name"
           value={deckName}
           onChange={(e) => setDeckName(e.target.value)}
+          onKeyDown ={handleKeyPress}
         />
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -47,6 +56,8 @@ export default function Home() {
           Create Deck
         </button>
       </div>
+      <div className="w-full max-w-md h-[400px] overflow-y-auto mb-4"> {/* Fixed height with scroll */}
+
       <div className="w-full max-w-md">
         {decks.map((deck) => (
           <div
@@ -57,6 +68,7 @@ export default function Home() {
             {deck.name}
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
