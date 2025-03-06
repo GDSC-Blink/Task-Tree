@@ -55,7 +55,7 @@ export default function StudyPage() {
 
       {/* Flashcard */}
       <div
-        className="w-full max-w-2xl h-64 border rounded-xl mb-6 bg-white shadow-lg flex items-center justify-center cursor-pointer"
+        className="w-full max-w-2xl h-64 border rounded-xl mb-6 bg-white shadow-lg flex items-center justify-center cursor-pointer hover:bg-gray-200"
         onClick={flipCard}
       >
         <div className="text-2xl break-words p-6 max-h-full overflow-y-auto w-full h-full flex items-center justify-center">
