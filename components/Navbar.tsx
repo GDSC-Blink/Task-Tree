@@ -17,7 +17,7 @@ const Navbar = () => {
       <h1 className="text-2xl font-bold">Task Tree</h1>
       <ul className="flex space-x-6 text-sm">
         <li>
-          <Link href="/dashboard" className={linkClasses("/dashboard")}>
+          <Link href="/" className={linkClasses("/dashboard")}>
             Dashboard
           </Link>
         </li>
