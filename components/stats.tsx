@@ -13,7 +13,7 @@ const StatsComponent = () => {
           <CircularProgressbar
             value={45}
             circleRatio={0.7}
-            text="min/60"
+            text="XP"
             styles={buildStyles({
               rotation: 0.65,
               pathColor: "#808080",

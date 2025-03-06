@@ -38,9 +38,9 @@ export default function StudyTechniques() {
           </div>
           {/* Bottom-right widget */}
           <div className="absolute bottom-5 right-5">
-            <Link href="/active_recall">
-              <Widget title="Active Recall">
-                <p>Active Recall</p>
+            <Link href="/pomodoro">
+              <Widget title="Pomodoro">
+                <p>Pomodoro</p>
               </Widget>
             </Link>
           </div>

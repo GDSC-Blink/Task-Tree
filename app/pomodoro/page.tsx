@@ -1,75 +1,77 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 
-export default function Pomodoro() {
-  const [minutes, setMinutes] = useState(25)
-  const [seconds, setSeconds] = useState(0)
-  const [isActive, setIsActive] = useState(false)
-  const [isBreak, setIsBreak] = useState(false)
-  const [cycles, setCycles] = useState(0)
-  const [progress, setProgress] = useState(100)
+const Pomodoro: React.FC = () => {
+  const [minutes, setMinutes] = useState<number>(25);
+  const [seconds, setSeconds] = useState<number>(0);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [isBreak, setIsBreak] = useState<boolean>(false);
+  const [cycles, setCycles] = useState<number>(0);
+  const [progress, setProgress] = useState<number>(100);
 
-  const totalTime = isBreak ? 300 : 1500
-  const currentTime = minutes * 60 + seconds
+  const totalTime: number = isBreak ? 300 : 1500;
+  const currentTime: number = minutes * 60 + seconds;
 
   useEffect(() => {
-    let interval = null
+    let interval: NodeJS.Timeout | null = null;
 
     if (isActive) {
       interval = setInterval(() => {
-        if (seconds == 0) {
-          if (minutes == 0) {
-            clearInterval(interval)
+        if (seconds === 0) {
+          if (minutes === 0) {
+            if (interval) clearInterval(interval);
 
             if (isBreak) {
-              setIsBreak(false)
-              setMinutes(25)
-              setCycles(cycles + 1)
+              setIsBreak(false);
+              setMinutes(25);
+              setCycles(prevCycles => prevCycles + 1);
             } else {
-              setIsBreak(true)
-              if (cycles % 4 == 3) {
-                setMinutes(15)
+              setIsBreak(true);
+              if (cycles % 4 === 3) {
+                setMinutes(15);
               } else {
-                setMinutes(5)
+                setMinutes(5);
               }
             }
-            setIsActive(false)
-            setProgress(100)
+            setIsActive(false);
+            setProgress(100);
           } else {
-            setMinutes(minutes - 1)
-            setSeconds(59)
+            setMinutes(prev => prev - 1);
+            setSeconds(59);
           }
         } else {
-          setSeconds(seconds - 1)
+          setSeconds(prev => prev - 1);
         }
 
-        const newProgress = (currentTime / totalTime) * 100
-        setProgress(newProgress)
-      }, 1000)
-    } else if (!isActive && seconds != 0) {
-      clearInterval(interval)
+        const newProgress = (currentTime / totalTime) * 100;
+        setProgress(newProgress);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      if (interval) clearInterval(interval);
     }
 
-    return () => clearInterval(interval)
-  }, [isActive, seconds, minutes, isBreak, cycles, currentTime, totalTime])
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive, seconds, minutes, isBreak, cycles, currentTime, totalTime]);
 
-  function startTimer() {
-    setIsActive(!isActive)
+  function startTimer(): void {
+    setIsActive(prev => !prev);
   }
 
-  function resetTimer() {
-    setIsActive(false)
-    setIsBreak(false)
-    setMinutes(25)
-    setSeconds(0)
-    setProgress(100)
+  function resetTimer(): void {
+    setIsActive(false);
+    setIsBreak(false);
+    setMinutes(25);
+    setSeconds(0);
+    setProgress(100);
   }
 
-  const radius = 70
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference * (1 - progress / 100)
+  const radius: number = 70;
+  const circumference: number = 2 * Math.PI * radius;
+  const strokeDashoffset: number = circumference * (1 - progress / 100);
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
@@ -155,9 +157,7 @@ export default function Pomodoro() {
       </div>
 
       <div style={{ maxWidth: "600px", margin: "0 auto", textAlign: "left" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "15px" }}>
-          How to Use the Pomodoro Technique
-        </h2>
+        <h2 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "15px" }}>How to Use the Pomodoro Technique</h2>
         <ol style={{ paddingLeft: "20px" }}>
           <li>Choose a task you want to complete</li>
           <li>Start the Pomodoro timer (25 minutes)</li>
@@ -167,5 +167,7 @@ export default function Pomodoro() {
         </ol>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Pomodoro;
