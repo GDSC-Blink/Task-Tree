@@ -28,22 +28,12 @@ const Navbar = () => {
         </li>
         <li>
           <Link href="/study-techniques" className={linkClasses("/study-techniques")}>
-            Study Techniques
+            Study
           </Link>
         </li>
         <li>
           <Link href="/profile" className={linkClasses("/profile")}>
             Profile
-          </Link>
-        </li>
-        <li>
-          <Link href="/gpa-calculator" className={linkClasses("/gpa-calculator")}>
-            GPA Calculator
-          </Link>
-        </li>
-        <li>
-          <Link href="/plant" className={linkClasses("/plant")}>
-            Your Plant
           </Link>
         </li>
       </ul>
