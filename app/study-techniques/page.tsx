@@ -22,17 +22,17 @@ export default function StudyTechniques() {
           </div>
           {/* Top-right widget */}
           <div className="absolute top-5 right-5">
-            <Link href="/active_recall">
-              <Widget title="Active Recall">
-                <p>Active Recall</p>
+            <Link href="/flashcard">
+              <Widget title="FlashCard">
+                <p>Flashcards</p>
               </Widget>
             </Link>
           </div>
           {/* Bottom-left widget */}
           <div className="absolute bottom-5 left-5">
-            <Link href="/active_recall">
-              <Widget title="Active Recall">
-                <p>Active Recall</p>
+            <Link href="/spaced-repetition">
+              <Widget title="Spaced Repetition">
+                <p>Spaced Repetition</p>
               </Widget>
             </Link>
           </div>
