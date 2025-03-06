@@ -46,6 +46,7 @@ export default function StudyTechniques() {
           </div>
         </div>
       </div>
+      
     )
   }
   
