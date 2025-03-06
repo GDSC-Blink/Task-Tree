@@ -1,11 +1,34 @@
-import Link from "next/link"
+import StatsComponent from "@/components/stats";
+import ToDoComponent from "@/components/todo";
 
-export default function Home() {
+export default function Dashboard() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-4">Welcome to Task Tree</h1>
-      <h2 className="text-xl font-normal">Your productivity journey starts here!</h2>
-    </main>
-  )
+    <div className="min-h-screen flex flex-col">
+      <header className="p-8">
+        <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+        <p>
+          Welcome to your Task Tree dashboard. Your productivity journey starts here!
+        </p>
+      </header>
+      {/* This container fills the remaining space below the header */}
+      <div className="relative flex-grow">
+        {/* Top-left widget */}
+        <div className="absolute top-5 left-5">
+          <ToDoComponent></ToDoComponent>
+        </div>
+        {/* Top-right widget */}
+        <div className="absolute top-5 right-5">
+          <StatsComponent></StatsComponent>
+        </div>
+        {/* Bottom-left widget */}
+        <div className="absolute bottom-5 left-5">
+          <ToDoComponent></ToDoComponent>
+        </div>
+        {/* Bottom-right widget */}
+        <div className="absolute bottom-5 right-5">
+          <StatsComponent></StatsComponent>
+        </div>
+      </div>
+    </div>
+  );
 }
-
