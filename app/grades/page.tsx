@@ -224,7 +224,7 @@ export default function Grades() {
 
   return (
     <div className="flex flex-col items-center p-8 max-w-[1500px] w-full mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Courses</h1>
+      <h1 className="text-2xl font-bold mb-4">Your Courses</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 w-full">
         <CourseSummaryCard totalCourses={courses.length} totalUnits={courses.reduce((sum, course) => sum + course.units, 0)} />
         <GPADisplayCard

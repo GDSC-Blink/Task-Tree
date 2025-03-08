@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   // Function to determine the link's styles
   const linkClasses = (href: string) =>
-    pathname === href
+    pathname === href || (href === "/" && pathname === "/dashboard")
       ? "text-black font-bold border-b-2 border-black"
       : "text-gray-500 hover:text-black";
 
@@ -17,7 +17,7 @@ const Navbar = () => {
       <h1 className="text-2xl font-bold">Task Tree</h1>
       <ul className="flex space-x-6 text-sm">
         <li>
-          <Link href="/" className={linkClasses("/dashboard")}>
+          <Link href="/" className={linkClasses("/")}>
             Dashboard
           </Link>
         </li>

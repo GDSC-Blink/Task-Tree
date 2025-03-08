@@ -1,7 +1,13 @@
+import GradesWidget from "@/components/GradesWidget";
 import StatsComponent from "@/components/stats";
 import ToDoComponent from "@/components/todo";
 
 export default function Dashboard() {
+  // Mock data for the GradesWidget
+  const totalCourses = 5;
+  const totalUnits = 15;
+  const gpa = 3.5;
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="p-8">
@@ -14,19 +20,19 @@ export default function Dashboard() {
       <div className="relative flex-grow">
         {/* Top-left widget */}
         <div className="absolute top-5 left-5">
-          <ToDoComponent></ToDoComponent>
+          <ToDoComponent />
         </div>
         {/* Top-right widget */}
         <div className="absolute top-5 right-5">
-          <StatsComponent></StatsComponent>
+          <StatsComponent />
         </div>
         {/* Bottom-left widget */}
         <div className="absolute bottom-5 left-5">
-          <ToDoComponent></ToDoComponent>
+          <ToDoComponent />
         </div>
         {/* Bottom-right widget */}
         <div className="absolute bottom-5 right-5">
-          <StatsComponent></StatsComponent>
+          <GradesWidget totalCourses={totalCourses} totalUnits={totalUnits} gpa={gpa} />
         </div>
       </div>
     </div>
