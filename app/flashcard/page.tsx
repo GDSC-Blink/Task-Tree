@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import {db} from "../../lib/firebase";
+import {collection, addDoc, getDocs} from "firebase/firestore"
 type Deck = {
   id: number;
   name: string;
