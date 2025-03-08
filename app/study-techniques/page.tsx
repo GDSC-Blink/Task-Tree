@@ -37,9 +37,9 @@ export default function StudyTechniques() {
                 <p>Pomodoro</p>
               </Widget>
             </Link>
-            <Link href="/active_recall">
-              <Widget title="Active Recall">
-                <p>Active Recall</p>
+            <Link href="/mind-map">
+              <Widget title="Mind Map">
+                <p>Mind Map</p>
               </Widget>
             </Link>
           </div>
