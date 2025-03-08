@@ -1,10 +1,15 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import CourseSummaryCard from './components/CourseSummaryCard';
+import GPADisplayCard from './components/GPADisplayCard';
+import CourseCard from './components/CourseCard';
+import AddEditCourseModal from './components/AddEditCourseModal';
 
 interface Course {
   name: string;
   units: number;
   grade: string;
+  percentage?: number;
 }
 
 const defaultGradeScale: { [key: number]: string } = {
@@ -21,6 +26,22 @@ const defaultGradeScale: { [key: number]: string } = {
   63: 'D',
   60: 'D-',
   0: 'F',
+};
+
+const gradeToGPA: { [key: string]: number } = {
+  'A+': 4.0,
+  'A': 4.0,
+  'A-': 3.7,
+  'B+': 3.3,
+  'B': 3.0,
+  'B-': 2.7,
+  'C+': 2.3,
+  'C': 2.0,
+  'C-': 1.7,
+  'D+': 1.3,
+  'D': 1.0,
+  'D-': 0.7,
+  'F': 0.0,
 };
 
 const getLetterGrade = (percentage: number, gradeScale: { [key: number]: string }) => {
@@ -40,68 +61,106 @@ export default function Grades() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddCourse, setIsAddCourse] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scaleError, setScaleError] = useState<string | null>(null);
   const [isGradeScaleOpen, setIsGradeScaleOpen] = useState(false);
   const [isPercentageInput, setIsPercentageInput] = useState(false);
 
-  const handleAddCourse = () => {
+  useEffect(() => {
+    validateGradeScale();
+  }, [gradeScale]);
+
+  const validateGradeScale = () => {
+    setScaleError(null);
+    const entries = Object.entries(gradeScale);
+    if (entries.length < 2) {
+      setScaleError("Grade scale needs at least two grade levels");
+      return false;
+    }
+    if (!gradeScale.hasOwnProperty('0') && !Object.keys(gradeScale).some(k => parseInt(k) <= 0)) {
+      setScaleError("Grade scale must have a minimum threshold (typically 0 for F)");
+      return false;
+    }
+    const grades = Object.values(gradeScale);
+    const uniqueGrades = new Set(grades);
+    if (uniqueGrades.size !== grades.length) {
+      setScaleError("Each letter grade must be unique");
+      return false;
+    }
+    const requiredGrades = ['A', 'B', 'C', 'D', 'F'];
+    for (const grade of requiredGrades) {
+      if (!grades.some(g => g.startsWith(grade))) {
+        setScaleError(`Grade scale must include at least one grade starting with '${grade}'`);
+        return false;
+      }
+    }
+    const thresholds = Object.keys(gradeScale).map(k => parseInt(k)).sort((a, b) => a - b);
+    for (let i = 0; i < thresholds.length - 1; i++) {
+      if (thresholds[i] === thresholds[i + 1]) {
+        setScaleError("Duplicate percentage thresholds are not allowed");
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const validateAndProcessCourse = () => {
+    if (!validateGradeScale()) {
+      return null;
+    }
     if (!newCourse.name || isNaN(newCourse.units) || newCourse.units <= 0) {
       setError('Please enter a valid course name and number of units.');
-      return;
+      return null;
     }
+    const processedCourse = { ...newCourse };
     if (isPercentageInput) {
-      const percentage = parseInt(newCourse.grade, 10);
+      const percentage = parseInt(newCourse.grade);
       if (isNaN(percentage)) {
         setError('Please enter a valid percentage grade.');
-        return;
+        return null;
       }
-      newCourse.grade = getLetterGrade(percentage, gradeScale);
+      processedCourse.grade = getLetterGrade(percentage, gradeScale);
+      processedCourse.percentage = percentage;
     } else {
       if (!Object.values(gradeScale).includes(newCourse.grade)) {
         setError('Please enter a valid letter grade.');
-        return;
+        return null;
       }
+      processedCourse.percentage = undefined;
     }
-    setCourses([...courses, newCourse]);
+    return processedCourse;
+  };
+
+  const handleAddCourse = () => {
+    const processedCourse = validateAndProcessCourse();
+    if (!processedCourse) return;
+    setCourses([...courses, processedCourse]);
     setNewCourse({ name: '', units: 0, grade: '' });
     setIsModalOpen(false);
     setError(null);
+    setIsGradeScaleOpen(false);
   };
 
   const handleEditCourse = (index: number) => {
     setEditingIndex(index);
-    setNewCourse(courses[index]);
+    const course = courses[index];
+    setNewCourse({ ...course });
     setIsAddCourse(false);
     setIsModalOpen(true);
-    setIsPercentageInput(false); // Reset the percentage input toggle
+    setIsPercentageInput(course.percentage !== undefined);
+    setIsGradeScaleOpen(false);
   };
 
   const handleSaveCourse = () => {
-    if (!newCourse.name || isNaN(newCourse.units) || newCourse.units <= 0) {
-      setError('Please enter a valid course name and number of units.');
-      return;
-    }
-    if (isPercentageInput) {
-      const percentage = parseInt(newCourse.grade, 10);
-      if (isNaN(percentage)) {
-        setError('Please enter a valid percentage grade.');
-        return;
-      }
-      newCourse.grade = getLetterGrade(percentage, gradeScale);
-    } else {
-      if (!Object.values(gradeScale).includes(newCourse.grade)) {
-        setError('Please enter a valid letter grade.');
-        return;
-      }
-    }
+    const processedCourse = validateAndProcessCourse();
+    if (!processedCourse || editingIndex === null) return;
     const updatedCourses = [...courses];
-    if (editingIndex !== null) {
-      updatedCourses[editingIndex] = newCourse;
-      setCourses(updatedCourses);
-      setEditingIndex(null);
-      setNewCourse({ name: '', units: 0, grade: '' });
-      setIsModalOpen(false);
-      setError(null);
-    }
+    updatedCourses[editingIndex] = processedCourse;
+    setCourses(updatedCourses);
+    setEditingIndex(null);
+    setNewCourse({ name: '', units: 0, grade: '' });
+    setIsModalOpen(false);
+    setError(null);
+    setIsGradeScaleOpen(false);
   };
 
   const handleRemoveCourse = () => {
@@ -111,6 +170,7 @@ export default function Grades() {
       setEditingIndex(null);
       setNewCourse({ name: '', units: 0, grade: '' });
       setIsModalOpen(false);
+      setIsGradeScaleOpen(false);
     }
   };
 
@@ -122,123 +182,88 @@ export default function Grades() {
     const totalUnits = courses.reduce((sum, course) => sum + course.units, 0);
     const totalPoints = courses.reduce((sum, course) => {
       const grade = course.grade;
-      const gradePoint = Object.keys(gradeScale).find(key => gradeScale[parseInt(key)] === grade);
-      return sum + (parseInt(gradePoint || '0') * course.units);
+      return sum + (gradeToGPA[grade] * course.units);
     }, 0);
-    return totalUnits ? (totalPoints / totalUnits).toFixed(2) : '0.00';
+    return totalUnits ? (totalPoints / totalUnits).toFixed(2) : 'N/A';
+  };
+
+  const getGPAColor = (gpa: number) => {
+    if (gpa >= 3.5) return '#4CAF50';
+    if (gpa >= 3.0) return '#8BC34A';
+    if (gpa >= 2.5) return '#CDDC39';
+    if (gpa >= 2.0) return '#FFEB3B';
+    if (gpa >= 1.0) return '#FF9800';
+    return '#F44336';
   };
 
   const handleOpenAddCourseModal = () => {
     setNewCourse({ name: '', units: 0, grade: '' });
     setIsAddCourse(true);
     setIsModalOpen(true);
-    setIsPercentageInput(false); // Reset the percentage input toggle
+    setIsPercentageInput(false);
+    setIsGradeScaleOpen(false);
   };
+
+  const toggleGradeScaleForm = () => {
+    setIsGradeScaleOpen(!isGradeScaleOpen);
+  };
+
+  const resetGradeScale = () => {
+    setGradeScale(defaultGradeScale);
+    setScaleError(null);
+  };
+
+  const gpaResult = calculateGPA();
+  const currentGPA = gpaResult === 'N/A' ? 0 : parseFloat(gpaResult);
+  const maxGPA = 4.0;
+  const gpaPercentage = (currentGPA / maxGPA) * 100;
+  const gpaColor = gpaResult === 'N/A' ? '#9e9e9e' : getGPAColor(currentGPA);
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (gpaPercentage / 100) * circumference;
 
   return (
     <div className="flex flex-col items-center p-8 max-w-[1500px] w-full mx-auto">
       <h1 className="text-2xl font-bold mb-4">Courses</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 w-full">
-        <div className="border p-4 flex flex-col justify-between items-start h-32 w-full rounded-lg">
-          <div>
-            <p className="font-bold">Total Courses: {courses.length}</p>
-            <p>Total Units: {courses.reduce((sum, course) => sum + course.units, 0)}</p>
-            <p>GPA: {calculateGPA()}</p>
-          </div>
-        </div>
+        <CourseSummaryCard totalCourses={courses.length} totalUnits={courses.reduce((sum, course) => sum + course.units, 0)} />
+        <GPADisplayCard
+          gpaResult={gpaResult}
+          gpaColor={gpaColor}
+          radius={radius}
+          circumference={circumference}
+          strokeDashoffset={strokeDashoffset}
+        />
         {courses.map((course, index) => (
-          <div key={index} className="border p-4 flex flex-col justify-between items-start h-32 w-full rounded-lg">
-            <div>
-              <p className="font-bold">{course.name}</p>
-              <p>{course.units} units</p>
-              <p>{course.grade}</p>
-            </div>
-            <button onClick={() => handleEditCourse(index)} className="text-blue-500 text-sm mt-auto self-end hover:text-blue-700 transition duration-200">Edit</button>
-          </div>
+          <CourseCard key={index} course={course} onEdit={() => handleEditCourse(index)} />
         ))}
         <button onClick={handleOpenAddCourseModal} className="border-dashed border-2 border-gray-400 text-gray-400 p-4 flex justify-center items-center h-32 w-full rounded-lg hover:border-gray-600 hover:text-gray-600 transition duration-200">
           Add Course
         </button>
       </div>
-
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded shadow-lg w-1/3">
-            <h2 className="text-2xl font-bold mb-4">{isAddCourse ? 'Add Course' : 'Edit Course'}</h2>
-            <div className="mb-4">
-              <label className="block mb-2">Course Name</label>
-              <input
-                type="text"
-                placeholder="Course Name"
-                value={newCourse.name}
-                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                className="border p-2 mb-2 w-full rounded"
-              />
-              <label className="block mb-2">Units</label>
-              <input
-                type="text"
-                placeholder="Units"
-                value={newCourse.units === 0 ? '' : newCourse.units}
-                onChange={(e) => setNewCourse({ ...newCourse, units: parseInt(e.target.value) || 0 })}
-                className="border p-2 mb-2 w-full rounded"
-              />
-              <label className="block mb-2">Grade</label>
-              <div className="flex items-center mb-2">
-                <input
-                  type="text"
-                  placeholder="Grade"
-                  value={newCourse.grade}
-                  onChange={(e) => handleGradeChange(e.target.value)}
-                  className="border p-2 w-full rounded"
-                />
-                {isPercentageInput && <span className="ml-2">%</span>}
-                <label className="ml-2">Percentage</label>
-                <input
-                  type="checkbox"
-                  checked={isPercentageInput}
-                  onChange={() => setIsPercentageInput(!isPercentageInput)}
-                  className="ml-2"
-                />
-              </div>
-              {error && <p className="text-red-500 mb-2">{error}</p>}
-              <div className="flex justify-between space-x-2">
-                <button onClick={isAddCourse ? handleAddCourse : handleSaveCourse} className="bg-blue-500 text-white p-2 w-1/2 rounded hover:bg-blue-700 transition duration-200">
-                  {isAddCourse ? 'Add' : 'Save'}
-                </button>
-                <button onClick={() => setIsModalOpen(false)} className="bg-gray-500 text-white p-2 w-1/2 rounded hover:bg-gray-700 transition duration-200">Cancel</button>
-              </div>
-              {!isAddCourse && (
-                <button onClick={handleRemoveCourse} className="bg-red-500 text-white p-2 w-full mt-2 rounded hover:bg-red-700 transition duration-200">
-                  Remove
-                </button>
-              )}
-            </div>
-            <button onClick={() => setIsGradeScaleOpen(!isGradeScaleOpen)} className="bg-gray-500 text-white p-2 w-full mt-2 rounded hover:bg-gray-700 transition duration-200">
-              {isGradeScaleOpen ? 'Hide Grade Scale' : 'Edit Grade Scale'}
-            </button>
-            {isGradeScaleOpen && (
-              <div className="mt-4">
-                {Object.keys(gradeScale).map((minPercentage) => (
-                  <div key={minPercentage} className="mb-2">
-                    <label className="block">{gradeScale[parseInt(minPercentage)]}</label>
-                    <input
-                      type="number"
-                      value={minPercentage}
-                      onChange={(e) => {
-                        const newGradeScale = { ...gradeScale };
-                        const grade = newGradeScale[parseInt(minPercentage)];
-                        delete newGradeScale[parseInt(minPercentage)];
-                        newGradeScale[parseInt(e.target.value)] = grade;
-                        setGradeScale(newGradeScale);
-                      }}
-                      className="border p-2 w-full rounded"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <AddEditCourseModal
+          isAddCourse={isAddCourse}
+          newCourse={newCourse}
+          isPercentageInput={isPercentageInput}
+          error={error}
+          isGradeScaleOpen={isGradeScaleOpen}
+          scaleError={scaleError}
+          gradeScale={gradeScale}
+          onClose={() => setIsModalOpen(false)}
+          onSave={isAddCourse ? handleAddCourse : handleSaveCourse}
+          onRemove={handleRemoveCourse}
+          onGradeChange={handleGradeChange}
+          onToggleGradeScaleForm={toggleGradeScaleForm}
+          onResetGradeScale={resetGradeScale}
+          onCourseChange={(field, value) => setNewCourse({ ...newCourse, [field]: value })}
+          onTogglePercentageInput={() => {
+            setIsPercentageInput(!isPercentageInput);
+            setIsGradeScaleOpen(false);
+            setNewCourse({ ...newCourse, grade: '' });
+          }}
+          onGradeScaleChange={(newGradeScale) => setGradeScale(newGradeScale)}
+        />
       )}
     </div>
   );
