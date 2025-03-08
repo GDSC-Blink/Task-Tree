@@ -5,6 +5,7 @@ interface Course {
   name: string;
   units: number;
   grade: string;
+  percentage?: number;
 }
 
 const defaultGradeScale: { [key: number]: string } = {
@@ -21,6 +22,22 @@ const defaultGradeScale: { [key: number]: string } = {
   63: 'D',
   60: 'D-',
   0: 'F',
+};
+
+const gradeToGPA: { [key: string]: number } = {
+  'A+': 4.0,
+  'A': 4.0,
+  'A-': 3.7,
+  'B+': 3.3,
+  'B': 3.0,
+  'B-': 2.7,
+  'C+': 2.3,
+  'C': 2.0,
+  'C-': 1.7,
+  'D+': 1.3,
+  'D': 1.0,
+  'D-': 0.7,
+  'F': 0.0,
 };
 
 const getLetterGrade = (percentage: number, gradeScale: { [key: number]: string }) => {
@@ -55,11 +72,13 @@ export default function Grades() {
         return;
       }
       newCourse.grade = getLetterGrade(percentage, gradeScale);
+      newCourse.percentage = percentage;
     } else {
       if (!Object.values(gradeScale).includes(newCourse.grade)) {
         setError('Please enter a valid letter grade.');
         return;
       }
+      newCourse.percentage = undefined;
     }
     setCourses([...courses, newCourse]);
     setNewCourse({ name: '', units: 0, grade: '' });
@@ -69,10 +88,11 @@ export default function Grades() {
 
   const handleEditCourse = (index: number) => {
     setEditingIndex(index);
-    setNewCourse(courses[index]);
+    const course = courses[index];
+    setNewCourse({ ...course }); // Create a copy of the course to avoid mutating the original
     setIsAddCourse(false);
     setIsModalOpen(true);
-    setIsPercentageInput(false); // Reset the percentage input toggle
+    setIsPercentageInput(course.percentage !== undefined); // Set the percentage input toggle based on the course
   };
 
   const handleSaveCourse = () => {
@@ -87,11 +107,13 @@ export default function Grades() {
         return;
       }
       newCourse.grade = getLetterGrade(percentage, gradeScale);
+      newCourse.percentage = percentage;
     } else {
       if (!Object.values(gradeScale).includes(newCourse.grade)) {
         setError('Please enter a valid letter grade.');
         return;
       }
+      newCourse.percentage = undefined;
     }
     const updatedCourses = [...courses];
     if (editingIndex !== null) {
@@ -115,15 +137,18 @@ export default function Grades() {
   };
 
   const handleGradeChange = (value: string) => {
-    setNewCourse({ ...newCourse, grade: value });
+    if (isPercentageInput) {
+      setNewCourse({ ...newCourse, percentage: parseInt(value), grade: value });
+    } else {
+      setNewCourse({ ...newCourse, grade: value, percentage: undefined });
+    }
   };
 
   const calculateGPA = () => {
     const totalUnits = courses.reduce((sum, course) => sum + course.units, 0);
     const totalPoints = courses.reduce((sum, course) => {
       const grade = course.grade;
-      const gradePoint = Object.keys(gradeScale).find(key => gradeScale[parseInt(key)] === grade);
-      return sum + (parseInt(gradePoint || '0') * course.units);
+      return sum + (gradeToGPA[grade] * course.units);
     }, 0);
     return totalUnits ? (totalPoints / totalUnits).toFixed(2) : '0.00';
   };
@@ -150,8 +175,10 @@ export default function Grades() {
           <div key={index} className="border p-4 flex flex-col justify-between items-start h-32 w-full rounded-lg">
             <div>
               <p className="font-bold">{course.name}</p>
-              <p>{course.units} units</p>
-              <p>{course.grade}</p>
+              <p>Unit: {course.units}</p>
+              <p>
+                Grade: {course.percentage !== undefined ? `${course.percentage}% (${course.grade})` : course.grade}
+              </p>
             </div>
             <button onClick={() => handleEditCourse(index)} className="text-blue-500 text-sm mt-auto self-end hover:text-blue-700 transition duration-200">Edit</button>
           </div>
@@ -163,78 +190,84 @@ export default function Grades() {
 
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded shadow-lg w-1/3">
-            <h2 className="text-2xl font-bold mb-4">{isAddCourse ? 'Add Course' : 'Edit Course'}</h2>
-            <div className="mb-4">
-              <label className="block mb-2">Course Name</label>
-              <input
-                type="text"
-                placeholder="Course Name"
-                value={newCourse.name}
-                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                className="border p-2 mb-2 w-full rounded"
-              />
-              <label className="block mb-2">Units</label>
-              <input
-                type="text"
-                placeholder="Units"
-                value={newCourse.units === 0 ? '' : newCourse.units}
-                onChange={(e) => setNewCourse({ ...newCourse, units: parseInt(e.target.value) || 0 })}
-                className="border p-2 mb-2 w-full rounded"
-              />
-              <label className="block mb-2">Grade</label>
-              <div className="flex items-center mb-2">
+          <div className="bg-white p-8 rounded shadow-lg w-2/3 flex">
+            <div className="w-1/2 pr-4">
+              <h2 className="text-2xl font-bold mb-4">{isAddCourse ? 'Add Course' : 'Edit Course'}</h2>
+              <div className="mb-4">
+                <label className="block mb-2">Course Name</label>
                 <input
                   type="text"
-                  placeholder="Grade"
-                  value={newCourse.grade}
-                  onChange={(e) => handleGradeChange(e.target.value)}
-                  className="border p-2 w-full rounded"
+                  placeholder="Course Name"
+                  value={newCourse.name}
+                  onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                  className="border p-2 mb-2 w-full rounded"
                 />
-                {isPercentageInput && <span className="ml-2">%</span>}
-                <label className="ml-2">Percentage</label>
+                <label className="block mb-2">Units</label>
                 <input
-                  type="checkbox"
-                  checked={isPercentageInput}
-                  onChange={() => setIsPercentageInput(!isPercentageInput)}
-                  className="ml-2"
+                  type="text"
+                  placeholder="Units"
+                  value={newCourse.units === 0 ? '' : newCourse.units}
+                  onChange={(e) => setNewCourse({ ...newCourse, units: parseInt(e.target.value) || 0 })}
+                  className="border p-2 mb-2 w-full rounded"
                 />
+                <label className="block mb-2">Grade</label>
+                <div className="flex items-center mb-2">
+                  <input
+                    type="text"
+                    placeholder="Grade"
+                    value={isPercentageInput && newCourse.percentage !== undefined ? newCourse.percentage.toString() : newCourse.grade}
+                    onChange={(e) => handleGradeChange(e.target.value)}
+                    className="border p-2 w-full rounded"
+                  />
+                  {isPercentageInput && <span className="ml-2">%</span>}
+                  <label className="ml-2">Percentage</label>
+                  <input
+                    type="checkbox"
+                    checked={isPercentageInput}
+                    onChange={() => setIsPercentageInput(!isPercentageInput)}
+                    className="ml-2"
+                  />
+                </div>
+                {error && <p className="text-red-500 mb-2">{error}</p>}
+                <div className="flex justify-between space-x-2">
+                  <button onClick={isAddCourse ? handleAddCourse : handleSaveCourse} className="bg-blue-500 text-white p-2 w-1/2 rounded hover:bg-blue-700 transition duration-200">
+                    {isAddCourse ? 'Add' : 'Save'}
+                  </button>
+                  <button onClick={() => setIsModalOpen(false)} className="bg-gray-500 text-white p-2 w-1/2 rounded hover:bg-gray-700 transition duration-200">Cancel</button>
+                </div>
+                {!isAddCourse && (
+                  <button onClick={handleRemoveCourse} className="bg-red-500 text-white p-2 w-full mt-2 rounded hover:bg-red-700 transition duration-200">
+                    Remove
+                  </button>
+                )}
               </div>
-              {error && <p className="text-red-500 mb-2">{error}</p>}
-              <div className="flex justify-between space-x-2">
-                <button onClick={isAddCourse ? handleAddCourse : handleSaveCourse} className="bg-blue-500 text-white p-2 w-1/2 rounded hover:bg-blue-700 transition duration-200">
-                  {isAddCourse ? 'Add' : 'Save'}
-                </button>
-                <button onClick={() => setIsModalOpen(false)} className="bg-gray-500 text-white p-2 w-1/2 rounded hover:bg-gray-700 transition duration-200">Cancel</button>
-              </div>
-              {!isAddCourse && (
-                <button onClick={handleRemoveCourse} className="bg-red-500 text-white p-2 w-full mt-2 rounded hover:bg-red-700 transition duration-200">
-                  Remove
-                </button>
-              )}
             </div>
-            <button onClick={() => setIsGradeScaleOpen(!isGradeScaleOpen)} className="bg-gray-500 text-white p-2 w-full mt-2 rounded hover:bg-gray-700 transition duration-200">
-              {isGradeScaleOpen ? 'Hide Grade Scale' : 'Edit Grade Scale'}
-            </button>
-            {isGradeScaleOpen && (
-              <div className="mt-4">
-                {Object.keys(gradeScale).map((minPercentage) => (
-                  <div key={minPercentage} className="mb-2">
-                    <label className="block">{gradeScale[parseInt(minPercentage)]}</label>
-                    <input
-                      type="number"
-                      value={minPercentage}
-                      onChange={(e) => {
-                        const newGradeScale = { ...gradeScale };
-                        const grade = newGradeScale[parseInt(minPercentage)];
-                        delete newGradeScale[parseInt(minPercentage)];
-                        newGradeScale[parseInt(e.target.value)] = grade;
-                        setGradeScale(newGradeScale);
-                      }}
-                      className="border p-2 w-full rounded"
-                    />
+            {isPercentageInput && (
+              <div className="w-1/2 pl-4 border-l">
+                <button onClick={() => setIsGradeScaleOpen(!isGradeScaleOpen)} className="bg-gray-500 text-white p-2 w-full mt-2 rounded hover:bg-gray-700 transition duration-200">
+                  {isGradeScaleOpen ? 'Hide Grade Scale' : 'Edit Grade Scale'}
+                </button>
+                {isGradeScaleOpen && (
+                  <div className="mt-4 overflow-y-auto max-h-[400px]">
+                    {Object.entries(gradeScale).map(([minPercentage, grade]) => (
+                      <div key={minPercentage} className="flex items-center mb-2">
+                        <label className="block w-1/3">{grade}</label>
+                        <input
+                          type="number"
+                          value={minPercentage}
+                          onChange={(e) => {
+                            const newGradeScale = { ...gradeScale };
+                            const grade = newGradeScale[parseInt(minPercentage)];
+                            delete newGradeScale[parseInt(minPercentage)];
+                            newGradeScale[parseInt(e.target.value)] = grade;
+                            setGradeScale(newGradeScale);
+                          }}
+                          className="border p-2 w-2/3 rounded"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
