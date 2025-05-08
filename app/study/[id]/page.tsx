@@ -1,20 +1,30 @@
 "use client"
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {db} from "../../../lib/firebase";
 
 export default function StudyPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [deck, setDeck] = useState<{ id: number; name: string; cards: { front: string; back: string }[] } | null>(null)
+  const [deck, setDeck] = useState<{ id: string; name: string; cards: { front: string; back: string }[] } | null>(null)
   const [currentIndex, setCurrentIndex] = useState<number>(0)
   const [isFlipped, setIsFlipped] = useState<boolean>(false)
 
   useEffect(() => {
-    const storedDecks = JSON.parse(localStorage.getItem("decks") || "[]")
-    const foundDeck = storedDecks.find((d: { id: number }) => d.id.toString() === id)
-    setDeck(foundDeck)
-  }, [id])
-
+    const fetchDeck = async () => {
+      if (!id) return;
+      const ref = doc(db, "decks", id as string);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        setDeck({ id: snap.id, name: data.name, cards: data.cards || [] });
+      } else {
+        setDeck(null);
+      }
+    };
+    fetchDeck();
+  }, [id]);
   const nextCard = () => {
     setCurrentIndex((prev) => (prev + 1) % (deck?.cards.length || 1))
     setIsFlipped(false) // Reset to front side when moving to next card
