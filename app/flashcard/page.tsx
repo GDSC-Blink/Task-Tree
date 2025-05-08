@@ -2,9 +2,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {db} from "../../lib/firebase";
-import {collection, addDoc, getDocs} from "firebase/firestore"
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 type Deck = {
-  id: number;
+  id: string;
   name: string;
   cards: string[];
 };
@@ -15,26 +21,53 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const storedDecks = JSON.parse(localStorage.getItem("decks") || "[]");
-    setDecks(storedDecks);
+    const fetchDecks = async () => {
+      const querySnapshot = await getDocs(collection(db, "decks"));
+      const deckList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Deck[];
+      setDecks(deckList);
+    };
+
+    fetchDecks();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("decks", JSON.stringify(decks));
-  }, [decks]);
-
- 
-
-  const createDeck = () => {
+  // Create a new deck in Firestore
+  const createDeck = async () => {
     if (!deckName.trim()) return;
-    const newDeck: Deck = { id: Date.now(), name: deckName, cards: [] };
-    setDecks([...decks, newDeck]);
-    setDeckName("");
+
+    const newDeck = {
+      name: deckName,
+      cards: [],
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, "decks"), newDeck);
+      setDecks([...decks, { ...newDeck, id: docRef.id }]);
+      setDeckName("");
+    } catch (error) {
+      console.error("Error adding deck: ", error);
+    }
   };
-  const handleKeyPress = (event:any) => {
-    if (event.key === 'Enter') {
+
+  // Delete a deck from Firestore and UI
+  const deleteDeck = async (deckId: string) => {
+    const confirm = window.confirm("Are you sure you want to delete this deck?");
+    if (!confirm) return;
+
+    try {
+      await deleteDoc(doc(db, "decks", deckId));
+      setDecks((prevDecks) => prevDecks.filter((deck) => deck.id !== deckId));
+    } catch (error) {
+      console.error("Error deleting deck: ", error);
+    }
+  };
+
+  const handleKeyPress = (event: any) => {
+    if (event.key === "Enter") {
       event.preventDefault();
-      createDeck(); // Trigger createDeck on Enter key press
+      createDeck();
     }
   };
 
@@ -48,7 +81,7 @@ export default function Home() {
           placeholder="Deck Name"
           value={deckName}
           onChange={(e) => setDeckName(e.target.value)}
-          onKeyDown ={handleKeyPress}
+          onKeyDown={handleKeyPress}
         />
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -57,19 +90,29 @@ export default function Home() {
           Create Deck
         </button>
       </div>
-      <div className="w-full max-w-md h-[400px] overflow-y-auto mb-4"> {/* Fixed height with scroll */}
 
-      <div className="w-full max-w-md">
-        {decks.map((deck) => (
-          <div
-            key={deck.id}
-            className="p-3 border rounded mb-2 cursor-pointer hover:bg-gray-100"
-            onClick={() => router.push(`/deck/${deck.id}`)}
-          >
-            {deck.name}
-          </div>
-        ))}
-      </div>
+      <div className="w-full max-w-md h-[400px] overflow-y-auto mb-4">
+        <div className="w-full max-w-md">
+          {decks.map((deck) => (
+            <div
+              key={deck.id}
+              className="p-3 border rounded mb-2 flex justify-between items-center hover:bg-gray-100"
+            >
+              <div
+                onClick={() => router.push(`/deck/${deck.id}`)}
+                className="cursor-pointer flex-1"
+              >
+                {deck.name}
+              </div>
+              <button
+                onClick={() => deleteDeck(deck.id)}
+                className="text-red-500 hover:text-red-700 ml-4"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

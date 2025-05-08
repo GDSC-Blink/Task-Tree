@@ -1,50 +1,68 @@
 import Link from "next/link";
-import Widget from "@/components/widget";
+import StudyWidget from "@/components/studytechwidget";
 
 export default function StudyTechniques() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Study Techniques</h1>
-        <p>Explore various study techniques to boost your productivity.</p>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Hero Header */}
+      <header className="bg-blue-600 text-white px-8 py-16">
+        <h1 className="text-4xl font-bold mb-4">Study Techniques</h1>
+        <p className="text-lg">Explore various study techniques to boost your productivity.</p>
       </header>
-      {/* Content area */}
-      <div className="flex-grow p-8">
-        {/* Two horizontal stacks */}
-        <div className="flex flex-row space-x-8">
-          {/* Left column: first three study techniques */}
-          <div className="flex flex-col space-y-4">
-            <Link href="/active_recall">
-              <Widget title="Active Recall">
-                <p>Active Recall</p>
-              </Widget>
-            </Link>
-            <Link href="/flashcard">
-              <Widget title="FlashCard">
-                <p>Flashcards</p>
-              </Widget>
-            </Link>
-            <Link href="/spaced-repetition">
-              <Widget title="Spaced Repetition">
-                <p>Spaced Repetition</p>
-              </Widget>
-            </Link>
-          </div>
-          {/* Right column: last two study techniques */}
-          <div className="flex flex-col space-y-4">
-            <Link href="/pomodoro">
-              <Widget title="Pomodoro">
-                <p>Pomodoro</p>
-              </Widget>
-            </Link>
-            <Link href="/mind-map">
-              <Widget title="Mind Map">
-                <p>Mind Map</p>
-              </Widget>
-            </Link>
-          </div>
+
+      {/* Section Header */}
+      <section className="px-8 pt-12 pb-6">
+        <h2 className="text-2xl font-semibold mb-2">Popular Techniques</h2>
+        <p className="text-gray-700 max-w-2xl">
+          These evidence-based study methods have proven to significantly improve your learning outcomes.
+          Explore each technique to find what works best for your learning style.
+        </p>
+      </section>
+
+      {/* Study Technique Grid */}
+      <section className="px-8 pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/active_recall">
+            <StudyWidget title="Active Recall">
+              <p className="text-gray-600 text-sm">
+                Improve memory retention by repeatedly testing yourself instead of reviewing notes passively.
+              </p>
+            </StudyWidget>
+          </Link>
+
+          <Link href="/flashcard">
+            <StudyWidget title="Flashcards">
+              <p className="text-gray-600 text-sm">
+                Reinforce concepts using question-and-answer cards that promote active recall.
+              </p>
+            </StudyWidget>
+          </Link>
+
+          <Link href="/spaced-repetition">
+            <StudyWidget title="Spaced Repetition">
+              <p className="text-gray-600 text-sm">
+                Review material at increasing intervals to strengthen long-term memory.
+              </p>
+            </StudyWidget>
+          </Link>
+
+          <Link href="/pomodoro">
+            <StudyWidget title="Pomodoro">
+              <p className="text-gray-600 text-sm">
+                Focus using timed sessions (25 mins study, 5 mins break) to enhance productivity.
+              </p>
+            </StudyWidget>
+          </Link>
+
+          <Link href="/mind-map">
+            <StudyWidget title="Mind Map">
+              <p className="text-gray-600 text-sm">
+                Use visual diagrams to organize information and discover relationships between ideas.
+              </p>
+            </StudyWidget>
+          </Link>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

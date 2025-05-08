@@ -1,56 +1,66 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {db} from "../../../lib/firebase";
 
 export default function DeckPage() {
   const router = useRouter();
   const { id } = useParams();
-  const [deck, setDeck] = useState<{ id: number; name: string; cards: {front:string; back: string}[] } | null>(null);
+  const [deck, setDeck] = useState<{ id: string; name: string; cards: {front:string; back: string}[] } | null>(null);
   const [newCard, setNewCard] = useState<string>("");
   const [frontCard, setFrontCard] = useState<string>("");
   const [backCard, setBackCard] = useState<string>("");
 
 
   useEffect(() => {
-    const storedDecks = JSON.parse(localStorage.getItem("decks") || "[]");
-    const foundDeck = storedDecks.find((d: { id: number }) => d.id.toString() === id);  // retrieve decks from lcoal storage and matches the URL ID
-    setDeck(foundDeck);
-  }, [id]); // runs when id changes or we go on new deck
-
-  const addCard = () => {
-    if (!frontCard.trim() || !backCard.trim()|| !deck) return; //prevent empty card or null deck
-
-    const updatedDecks = JSON.parse(localStorage.getItem("decks") || "[]").map((d: any) => // finds matching deck and append new cards to its cards parameter
-      d.id === deck.id ? { ...d, cards: [...d.cards, {front: frontCard, back:backCard}] } : d // ...d coppies all properties of decks and then creates then cards array w/ new card added
-    );
-
-    localStorage.setItem("decks", JSON.stringify(updatedDecks));
-    setDeck((prevDeck) => prevDeck && { ...prevDeck, cards: [...prevDeck.cards, {front:frontCard, back: backCard}] });
+    const fetchDeck = async () => {
+      if (!id) return;
+      const ref = doc(db, "decks", id as string);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        setDeck({ id: snap.id, name: data.name, cards: data.cards || [] });
+      } else {
+        setDeck(null);
+      }
+    };
+    fetchDeck();
+  }, [id]);
+  
+  const addCard = async () => {
+    if (!deck || !frontCard.trim() || !backCard.trim()) return;
+  
+    const ref = doc(db, "decks", deck.id);
+    const newCard = { front: frontCard, back: backCard };
+  
+    await updateDoc(ref, {
+      cards: arrayUnion(newCard),
+    });
+  
+    setDeck({ ...deck, cards: [...deck.cards, newCard] });
     setFrontCard("");
     setBackCard("");
   };
-
-  //Delete card
-  const deleteCard = (cardIndex: number) => {
+  
+  const deleteCard = async (cardIndex: number) => {
     if (!deck) return;
-
-    const updatedDecks = JSON.parse(localStorage.getItem("decks") || "[]").map((d: any) =>
-      d.id === deck.id ? { ...d, cards: d.cards.filter((_: any, i: number) => i !== cardIndex) } : d
-    );
-
-    localStorage.setItem("decks", JSON.stringify(updatedDecks));
-    setDeck((prevDeck) => prevDeck && { ...prevDeck, cards: prevDeck.cards.filter((_, i) => i !== cardIndex) });
+    const cardToDelete = deck.cards[cardIndex];
+    const ref = doc(db, "decks", deck.id);
+  
+    await updateDoc(ref, {
+      cards: deck.cards.filter((_, i) => i !== cardIndex), // Firestore requires full replacement for arrays if not using arrayRemove with full object match
+    });
+  
+    setDeck({ ...deck, cards: deck.cards.filter((_, i) => i !== cardIndex) });
   };
-
 
   // handle enter key submission for fields
   const handleEnter = (e: any) =>{
     if(e.key === "Enter"){
       const bothPopulated = frontCard.trim() !== "" && backCard.trim() !== "";
       if(bothPopulated){
-        setDeck((prevDeck) => prevDeck && { ...prevDeck, cards: [...prevDeck.cards, {front:frontCard, back: backCard}] });
-        setFrontCard("");
-        setBackCard("");
+        addCard()
 
       }
     }
