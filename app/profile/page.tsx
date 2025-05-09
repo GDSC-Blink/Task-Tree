@@ -1,68 +1,125 @@
-import Image from "next/image";
+"use client";
 
-export default function Profile() {
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { auth, db } from "../../lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+
+export default function ProfilePage() {
+  const [profile, setProfile] = useState({
+    username: "",
+    university: "",
+    github: "",
+    linkedin: "",
+  });
+  const [loading, setLoading] = useState(true); // Loading state for authentication
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push("/login"); // Redirect if not authenticated
+      } else {
+        setLoading(false); // Stop loading once the user is authenticated
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup the listener
+  }, [router]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setProfile(userDoc.data() as typeof profile);
+        }
+      }
+    };
+
+    if (!loading) {
+      fetchProfile();
+    }
+  }, [loading]);
+
+  const handleSave = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      setError("User not logged in.");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "users", user.uid), profile);
+      alert("Profile updated successfully!");
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      alert("You have been logged out.");
+      router.push("/login");
+    } catch (err: any) {
+      console.error("Logout error:", err.message);
+    }
+  };
+
+  if (loading) return <p>Loading...</p>; // Show a loading message while determining auth state
+
   return (
-    <>
-      <div className="flex flex-col items-center justify-center p-8">
-        <h1 className="text-2xl font-bold mb-4">Profile</h1>
-      </div>
-
-      <div className="flex justify-center items-center">
-        <div className="flex justify-center gap-40 items-center bg-white p-12 rounded-xl shadow-xl">
-          <div className="flex-col relative w-48 h-48">
-            <Image
-              src="/placeholder.svg"
-              alt=""
-              layout="fill"
-              objectFit="cover"
-              className="rounded-full border hover:bg-gray-100"
-            />
-             <button className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-white text-black text-sm font-medium border border-gray-300 rounded-full px-2.5 py-1 mt-2 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all">
-              Change
-            </button>
-          </div>
-
-          <div className="flex-col space-y-8">
-            <div>
-              <h1 className="font-bold">Name</h1>
-              <input 
-                placeholder="Your Name"
-                className="w-80 p-2 border rounded shadow-sm "
-              />
-            </div>
-
-            <div>
-              <h1 className="font-bold">University</h1>
-              <input 
-                placeholder="Your University"
-                className="w-80 p-2 border rounded shadow-sm "
-              />
-            </div>
-
-            <div>
-              <h1 className="font-bold">Github</h1>
-              <input 
-                placeholder="Your Github"
-                className="w-80 p-2 border rounded shadow-sm"
-              />
-            </div>
-
-            <div>
-              <h1 className="font-bold">Linkedin</h1>
-              <input 
-                placeholder="Your Linkedin"
-                className="w-80 p-2 border rounded shadow-sm "
-              />
-            </div>
-
-            <div>
-              <button className="rounded-full bg-black border-l text-white p-4 hover:bg-gray-800 shadow-md hover:shadow-lg transition-shadow">
-                Save Changes
-              </button>
-            </div>
-          </div>
+    <div className="flex flex-col items-center justify-center p-8">
+      <h1 className="text-2xl font-bold mb-4">Profile</h1>
+      <div className="space-y-4">
+        <div>
+          <label className="block font-bold">Username</label>
+          <input
+            type="text"
+            value={profile.username}
+            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+            className="border p-2 rounded w-80"
+          />
         </div>
+        <div>
+          <label className="block font-bold">University</label>
+          <input
+            type="text"
+            value={profile.university}
+            onChange={(e) => setProfile({ ...profile, university: e.target.value })}
+            className="border p-2 rounded w-80"
+          />
+        </div>
+        <div>
+          <label className="block font-bold">GitHub</label>
+          <input
+            type="text"
+            value={profile.github}
+            onChange={(e) => setProfile({ ...profile, github: e.target.value })}
+            className="border p-2 rounded w-80"
+          />
+        </div>
+        <div>
+          <label className="block font-bold">LinkedIn</label>
+          <input
+            type="text"
+            value={profile.linkedin}
+            onChange={(e) => setProfile({ ...profile, linkedin: e.target.value })}
+            className="border p-2 rounded w-80"
+          />
+        </div>
+        <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded">
+          Save Changes
+        </button>
+        <button onClick={handleLogout} className="bg-gray-500 text-white px-4 py-2 rounded mt-4">
+          Log Out
+        </button>
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
-    </>
+    </div>
   );
 }
