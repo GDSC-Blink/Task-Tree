@@ -1,40 +1,37 @@
-import GradesWidget from "@/components/GradesWidget";
-import StatsComponent from "@/components/stats";
-import ToDoComponent from "@/components/todo";
+"use client";
 
-export default function Dashboard() {
-  // Mock data for the GradesWidget
-  const totalCourses = 5;
-  const totalUnits = 15;
-  const gpa = 3.5;
+import { useEffect, useState } from "react";
+import { auth } from "../lib/firebase";
+
+export default function AboutPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsLoggedIn(!!user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-        <p>
-          Welcome to your Task Tree dashboard. Your productivity journey starts here!
-        </p>
-      </header>
-      {/* This container fills the remaining space below the header */}
-      <div className="relative flex-grow">
-        {/* Top-left widget */}
-        <div className="absolute top-5 left-5">
-          <ToDoComponent />
-        </div>
-        {/* Top-right widget */}
-        <div className="absolute top-5 right-5">
-          <StatsComponent />
-        </div>
-        {/* Bottom-left widget */}
-        <div className="absolute bottom-5 left-5">
-          <ToDoComponent />
-        </div>
-        {/* Bottom-right widget */}
-        <div className="absolute bottom-5 right-5">
-          <GradesWidget totalCourses={totalCourses} totalUnits={totalUnits} gpa={gpa} />
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
+      <h1 className="text-4xl font-bold mb-6 text-center">Welcome to Task Tree</h1>
+      <p className="text-lg text-gray-700 mb-6 text-center">
+        Task Tree is your ultimate productivity companion. Organize your tasks, track your grades, and
+        improve your study techniques, all in one place.
+      </p>
+      <p className="text-lg text-gray-700 mb-6 text-center">
+        Join us today and grow your productivity with Task Tree!
+      </p>
+      {!isLoggedIn && (
+        <a
+          href="/login"
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600"
+        >
+          Get Started
+        </a>
+      )}
     </div>
   );
 }
