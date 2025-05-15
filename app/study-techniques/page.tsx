@@ -5,7 +5,7 @@ export default function StudyTechniques() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Hero Header */}
-      <header className="bg-blue-600 text-white px-8 py-16">
+      <header className="bg-green-900 text-white px-8 py-16">
         <h1 className="text-4xl font-bold mb-4">Study Techniques</h1>
         <p className="text-lg">Explore various study techniques to boost your productivity.</p>
       </header>
@@ -21,14 +21,8 @@ export default function StudyTechniques() {
 
       {/* Study Technique Grid */}
       <section className="px-8 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/active_recall">
-            <StudyWidget title="Active Recall">
-              <p className="text-gray-600 text-sm">
-                Improve memory retention by repeatedly testing yourself instead of reviewing notes passively.
-              </p>
-            </StudyWidget>
-          </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+          
 
           <Link href="/flashcard">
             <StudyWidget title="Flashcards">
