@@ -36,6 +36,17 @@ export default function StudyPage() {
     fetchDeck();
   }, [id, userId]);
 
+  useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowRight") nextCard();        // Right arrow = next card
+    if (e.key === "ArrowLeft") prevCard();         // Left arrow = previous card
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") flipCard();  // Up/Down = flip
+  };
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [deck, currentIndex]);
+
+
   const nextCard = () => {
     setCurrentIndex((prev) => (prev + 1) % (deck?.cards.length || 1));
     setIsFlipped(false);
