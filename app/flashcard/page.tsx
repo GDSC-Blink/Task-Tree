@@ -9,6 +9,8 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
 type Deck = {
   id: string;
   name: string;
@@ -18,32 +20,36 @@ type Deck = {
 export default function Home() {
   const [deckName, setDeckName] = useState<string>("");
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  
   const router = useRouter();
 
   useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) setUserId(user.uid);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const fetchDecks = async () => {
-      const querySnapshot = await getDocs(collection(db, "decks"));
+      if (!userId) return;
+      const querySnapshot = await getDocs(collection(db, "users", userId, "decks"));
       const deckList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Deck[];
       setDecks(deckList);
     };
-
     fetchDecks();
-  }, []);
+  }, [userId]);
 
-  // Create a new deck in Firestore
   const createDeck = async () => {
-    if (!deckName.trim()) return;
-
-    const newDeck = {
-      name: deckName,
-      cards: [],
-    };
-
+    if (!deckName.trim() || !userId) return;
+    const newDeck = { name: deckName, cards: [] };
     try {
-      const docRef = await addDoc(collection(db, "decks"), newDeck);
+      const docRef = await addDoc(collection(db, "users", userId, "decks"), newDeck);
       setDecks([...decks, { ...newDeck, id: docRef.id }]);
       setDeckName("");
     } catch (error) {
@@ -51,13 +57,12 @@ export default function Home() {
     }
   };
 
-  // Delete a deck from Firestore and UI
   const deleteDeck = async (deckId: string) => {
+    if (!userId) return;
     const confirm = window.confirm("Are you sure you want to delete this deck?");
     if (!confirm) return;
-
     try {
-      await deleteDoc(doc(db, "decks", deckId));
+      await deleteDoc(doc(db, "users", userId, "decks", deckId));
       setDecks((prevDecks) => prevDecks.filter((deck) => deck.id !== deckId));
     } catch (error) {
       console.error("Error deleting deck: ", error);
@@ -90,7 +95,6 @@ export default function Home() {
           Create Deck
         </button>
       </div>
-
       <div className="w-full max-w-md h-[400px] overflow-y-auto mb-4">
         <div className="w-full max-w-md">
           {decks.map((deck) => (
