@@ -44,7 +44,7 @@ export default function StudyPage() {
   };
   window.addEventListener("keydown", handleKeyDown);
   return () => window.removeEventListener("keydown", handleKeyDown);
-}, [deck, currentIndex]);
+},  [deck, currentIndex]);
 
 
   const nextCard = () => {
