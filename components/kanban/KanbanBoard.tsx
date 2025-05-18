@@ -15,14 +15,34 @@ import {
 import { db } from "../../lib/firebase";
 import { Task } from "./task";
 import Column from "./Column";
+import { getAuth } from "firebase/auth";
 
 const KanbanBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get the authenticated user
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Sync tasks from Firestore in real-time
   useEffect(() => {
-    const q = query(collection(db, "tasks"), orderBy("createdAt")); // Get items from our collection ordered by the time it was created
-    const unsubscribe = onSnapshot(q, (snapshot) => { // real time listener for firebase changes
+    if (!userId) return;
+
+    const q = query(
+      collection(db, "users", userId, "tasks"),
+      orderBy("createdAt")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedTasks = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -31,30 +51,31 @@ const KanbanBoard: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   // Add new task to Firestore
-  
-const addTask = async (status: Task["status"]) => {
-  await addDoc(collection(db, "tasks"), { // create our new collection and add tasks into it
-    title: "",
-    description: "",
-    priority: "Low",
-    status,
-    createdAt: serverTimestamp(), //Track time this task was added
-  });
-};
+  const addTask = async (status: Task["status"]) => {
+    if (!userId) return;
+    await addDoc(collection(db, "users", userId, "tasks"), {
+      title: "",
+      description: "",
+      priority: "Low",
+      status,
+      createdAt: serverTimestamp(),
+    });
+  };
 
   // Delete task by Firestore doc ID
   const deleteTask = async (id: string) => {
-    await deleteDoc(doc(db, "tasks", id));
+    if (!userId) return;
+    await deleteDoc(doc(db, "users", userId, "tasks", id));
   };
 
   // Update task fields in Firestore
-  const updateTask = async (updated: Task) => { // retrieved task object with its updated fields
-    if (!updated.id) return;
+  const updateTask = async (updated: Task) => {
+    if (!updated.id || !userId) return;
     const { id, ...taskData } = updated;
-    await updateDoc(doc(db, "tasks", id), taskData); // update them in the database
+    await updateDoc(doc(db, "users", userId, "tasks", id), taskData);
   };
 
   return (
