@@ -4,73 +4,62 @@ import React, { useEffect, useState } from "react";
 import {
   collection,
   addDoc,
-  getDocs,
   deleteDoc,
   doc,
   onSnapshot,
+  updateDoc,
+  query,
+  orderBy,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { Task } from "./task";
 import Column from "./Column";
 
 const KanbanBoard: React.FC = () => {
-  // Store all our tasks 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "",
-      description: "",
-      priority: "High",
-      status: "todo",
-    },
-    {
-      id: 2,
-      title: "",
-      description: "",
-      priority: "Medium",
-      status: "inprogress",
-    },
-    {
-      id: 3,
-      title: "",
-      description: "",
-      priority: "Low",
-      status: "done",
-    },
-  ]);
-  // Create separate id for every new task
-  const [nextId, setNextId] = useState(4);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  const addTask = (status: Task["status"]) => {
-    // Creating a new task 
-    const newTask: Task = {
-      id: nextId,
-      title: "",
-      description: "",
-      priority: "Low",
-      status,
-    };
-    // update tasks in our array
-    setTasks((prev) => [...prev, newTask]);
-    // increment our id
-    setNextId((prev) => prev + 1);
-  };
- // take id number and filter out of the task
-  const deleteTask = (id: number) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+  // Sync tasks from Firestore in real-time
+  useEffect(() => {
+    const q = query(collection(db, "tasks"), orderBy("createdAt")); // Get items from our collection ordered by the time it was created
+    const unsubscribe = onSnapshot(q, (snapshot) => { // real time listener for firebase changes
+      const fetchedTasks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Task[];
+      setTasks(fetchedTasks);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Add new task to Firestore
+  
+const addTask = async (status: Task["status"]) => {
+  await addDoc(collection(db, "tasks"), { // create our new collection and add tasks into it
+    title: "",
+    description: "",
+    priority: "Low",
+    status,
+    createdAt: serverTimestamp(), //Track time this task was added
+  });
+};
+
+  // Delete task by Firestore doc ID
+  const deleteTask = async (id: string) => {
+    await deleteDoc(doc(db, "tasks", id));
   };
 
-  const updateTask = (updated: Task) => {
-    setTasks((prev) =>
-      // if id match update our task in the tasklist otherwise keep the same
-      prev.map((task) => (task.id === updated.id ? updated : task))
-    );
+  // Update task fields in Firestore
+  const updateTask = async (updated: Task) => { // retrieved task object with its updated fields
+    if (!updated.id) return;
+    const { id, ...taskData } = updated;
+    await updateDoc(doc(db, "tasks", id), taskData); // update them in the database
   };
 
   return (
     <div className="flex justify-center p-8">
       <div className="flex gap-8">
-        {/* TO DO COLUMN */}
         <Column
           title="To Do"
           columnId="todo"
@@ -79,7 +68,6 @@ const KanbanBoard: React.FC = () => {
           onDeleteTask={deleteTask}
           onUpdateTask={updateTask}
         />
-        {/* IN PROGRESS COLUMN */}
         <Column
           title="In Progress"
           columnId="inprogress"
@@ -88,7 +76,6 @@ const KanbanBoard: React.FC = () => {
           onDeleteTask={deleteTask}
           onUpdateTask={updateTask}
         />
-        {/* DONE COLUMN */}
         <Column
           title="Done"
           columnId="done"

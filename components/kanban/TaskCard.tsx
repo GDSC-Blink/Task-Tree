@@ -13,7 +13,7 @@ const priorityStyles = {
 
 interface TaskCardProps {
   task: Task;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   onUpdate: (updatedTask: Task) => void;
 }
 
@@ -66,7 +66,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDelete, onUpdate }) => {
       </select>
       {/* Delete button  */}
       <button
-        onClick={() => onDelete(task.id)}
+        onClick={() => onDelete(task.id!)}
         className="absolute top-2 right-2 text-red-500 text-xs"
       >
         ✕
