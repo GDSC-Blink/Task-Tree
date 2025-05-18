@@ -7,7 +7,7 @@ interface ColumnProps {
   columnId: string;
   tasks: Task[];
   onAddTask: (status: Task["status"]) => void;
-  onDeleteTask: (id: number) => void;
+  onDeleteTask: (id: string) => void;
   onUpdateTask: (task: Task) => void;
 }
 
